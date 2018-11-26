@@ -1,5 +1,5 @@
 ---
-title: "Spatial Ecology demo"
+title: "Spatial Ecology demo complete"
 author: "Vasilis Dakos"
 date: "2 November 2018"
 output:
@@ -26,7 +26,7 @@ library(fields)
 
 ## The Levins metapopulation model
 1. Write the function of the Levins metapopulation model.
-
+$\frac{dp}{dt} = cp(1-p) - ep$
 ```{r echo=TRUE}
 
 levins <- function(t, y, parms) {
@@ -54,8 +54,8 @@ m <- seq(0,2,length.out = 20)
 plot(m, eval(peq), type = "b", col =1, ylab = "p*", xlab = "m (c/e)")
 ```
 
-#Mainland-island model (also propagule rain)
-$\frac{dp}{dt} = ce(1-p) - ep$
+##Mainland-island model (also propagule rain)
+$\frac{dp}{dt} = c_me(1-p) - ep$
 
 3. Write the full model assuming local colonisation and colonisation from mainland ($c_m$)
 4. Plot the colonisation and extinction rates assuming the local colonisation is much smaller than colonisation from mainland. Which model are we recovering? 
@@ -89,7 +89,7 @@ legend("topright", c("m=10", "m=2","m=1"), lty= 1,col = c(1,2,3), bty = "n")
 ```
 
 
-#Rescue effect (core-satellite model)
+##Rescue effect (core-satellite model)
 $\frac{dp}{dt} = cp(1-p) - ep(1-ap)$
 
 10. Which process would the size of the patches affect? 
@@ -117,63 +117,34 @@ The equilibrium is given by:
 $\frac{(1-D)+\frac{e}{c}}{1-a\frac{e}{c}}$
 
 15. Rewrite in terms of $m=c/e$.
-Explore the relative effect of rescue effect and habitat destruction for $m>1$ and $m<1$
+Explore the relative effect of rescue effect and habitat destruction for $m>a$ and $m<a$
 What do you observe?
 
 ```{r echo=TRUE}
 peq <- expression(ifelse((1-m*(1-D))/(a-m)<0,0,(1-m*(1-D))/(a-m)))
-D <- seq(0,1,length.out = 40)
-m=3
-plot(D, with(as.list(c(m,a=0.1)),{eval(peq)}), type = "b", col =1, ylab = "p*", xlab = "habitat destroyed, D",ylim = c(0,1))
-lines(D, with(as.list(c(m,a=0.5)),{eval(peq)}), type = "b", col =2)
-lines(D, with(as.list(c(m,a=0.9)),{eval(peq)}), type = "b", col =3)
-legend("topleft", c("a=0.1", "a=0.5","a=0.9"), lty= 1,col = c(1,2,3), bty = "n")
-title("m=3")
-
-m=1.5
-plot(D, with(as.list(c(m,a=0.1)),{eval(peq)}), type = "b", col =1, ylab = "p*", xlab = "habitat destroyed, D",ylim = c(0,1))
-lines(D, with(as.list(c(m,a=0.5)),{eval(peq)}), type = "b", col =2)
-lines(D, with(as.list(c(m,a=0.9)),{eval(peq)}), type = "b", col =3)
-legend("topleft", c("a=0.1", "a=0.5","a=0.9"), lty= 1,col = c(1,2,3), bty = "n")
-title("m=1.5")
+D <- seq(0,1,length.out = 20)
+m=2
+z <- with(as.list(c(m,a=1.5)),{eval(peq)})
+z[z>1]<-1
+plot(D, z, type = "b", col =1, ylab = "p*", xlab = "habitat destroyed, D",ylim = c(0,1))
+z <- with(as.list(c(m,a=2.5)),{eval(peq)})
+z[z>1]<-1
+lines(D, z, type = "b", col =2)
+legend("topleft", c("a=1.5", "a=2.5"), lty= 1,col = c(1,2), bty = "n")
 ```
 
-
-## Rescue effect and extinction debt 
-16. The above rescue effect seems too small.
-Let see it from a different perspective.
-
-Write the Rescue effect model 
-```{r echo=TRUE}
-rescue_effect <- function(t, y, parms) {
-  p <- y[1]
-  with(as.list(parms), {
-    dp <- c * p * (1 - p) - e * p * (1 - a*p)
-    return(list(dp))
-  })
-}
-```
-
-17. Simulate the Levins model with rescue effect and without.
-Try these different scenarios:
-a. $c<e, a=0.9$
-b. $c<e, a=0$
-
-What is the final outcome?
-Is the route to extinction the same?
-Explain what you think is the “extinction debt”?
-
-```{r echo=TRUE}
-t <- 1:200
-C1 <- ode(y = 0.999, times = t, func = rescue_effect, parms = c(c = 0.2,  e = 0.25, a = 1))
-C2 <- ode(y = 0.99, times = t, func = levins, parms = c(c = 0.2,  e = 0.25, a = 1))
-
-matplot(t, cbind(C1[, 2], C2[, 2]), type = "l", ylab = "p", xlab = "Time", col = 1)
-legend("right", c("c < e (rescue)", "c < e (Levins)"), lty = 1:3,  bty = "n")
-```
+##A host-parasite metapopulation model
+16. Write a host=parasite metapopulation model.
+Assume that: a) all patches equally connected.
+b) all conspecifics equal risk of extinction
+c) colonization proportional to occupied empty pathces
+d) host-parasite pathces do not contribute to colonization of empty patches
+e) parasite can only occupy patches where a host is present
+Find equilibria.
+What could be a way to reduce the presence of the parasite?
 
 ##Cellular automata - an approximation of the Levins model
-18. Build a CA model to simulate the Levins model.
+17. Build a CA model to simulate the Levins model.
 Use parameters as in the implicit version.
 Create a landscape of 100x100 patches.
 Initialise randomly 100 patches.
@@ -216,7 +187,7 @@ plot((1:n),ca_Levins$iN,type="l",col=1,xlab = "time")
 
 ```
 
-19. Compare the simulated CA equilibrium to the analytical one for a range of c.
+18. Compare the simulated CA equilibrium to the analytical one for a range of c.
 What do you find?
 
 ```{r echo=TRUE}
@@ -248,11 +219,11 @@ legend("right",c("analytical Levins","numerical CA"), col = c(1:2),  bty = "n")
 ```
 
 ##Synchronisation
-20. Assume a metapopulation of 2 patches where each population follows Ricker dynamics.
+19. Assume a metapopulation of 2 patches where each population follows Ricker dynamics.
 Recall that the Ricker model is:
 $N_{t+1} = N_t\exp{(r(1-\frac{N_t}{K})}$
 
-21. Assume local noise and the same carrying capacity $K=1$.
+20. Assume local noise and the same carrying capacity $K=1$.
 Start with some initial population abundance in both patches below carrying capacity $N_1=0.9, N_2=0.8$  Use an $r=1$.
 
 Also define dispersal $d$ as the fraction of the population that moves between the 2 patches:
@@ -271,7 +242,7 @@ ricker <- function(t, y, parms) {
 }
 ```
 
-22. Check the simulation for the 2 patches, with $d=0$:
+21. Check the simulation for the 2 patches, with $d=0$:
 ```{r echo=TRUE}
 prms <- c(r1 = 1, r2 = 1, K = 3, sigma = 0.01, d = 0) 
 Initial.N <- matrix(c(0.9,0.8),2,1)
@@ -282,7 +253,7 @@ ggplot(data = out.R, aes(time)) +
   geom_line(aes(y = N2, color = "N2"))
 ```
 
-23. Now lets add a dispersal rate of $d = 0.5$.
+22. Now lets add a dispersal rate of $d = 0.5$.
 ```{r echo=TRUE}
 prms <- c(r1 = 1, r2 = 1, K = 3, sigma = 0.01, d = 0.8) 
 out.R <- data.frame(ode(y = Initial.N, times = 1:200, func = ricker, parms = prms, method = "iteration"))
@@ -292,7 +263,7 @@ ggplot(data = out.R, aes(time)) +
   geom_line(aes(y = N2, color = "N2"))
 ```
 
-24. Lets assume periodic dynamics $r=2$.
+23. Lets assume periodic dynamics $r=2$.
 compare simulations with $d = 0$ and $d = 0.15$ (what do you observe?)
 ```{r echo=TRUE}
 ro = 2
@@ -310,7 +281,7 @@ ggplot(data = out.R, aes(time)) +
   geom_line(aes(y = N2, color = "N2"))
 ```
 
-25. Lets assume chaotic dynamics $r=3$ without noise ($sigma = 0$).
+24. Lets assume chaotic dynamics $r=3$ without noise ($sigma = 0$).
 compare simulations with $d = 0$ and $d = 0.3$ (what do you observe?)
 ```{r echo=TRUE}
 ro = 3
@@ -329,7 +300,7 @@ ggplot(data = out.R, aes(time)) +
   geom_line(aes(y = N2, color = "N2"))+
   geom_line(aes(y = N2+N1, color = "Total N"))
 ```
-26. Examine the effect of dispersal strength across different values of $r$ (recall $r<2$ is stable, $r>2.56$ chaos).
+25. Examine the effect of dispersal strength across different values of $r$ (recall $r<2$ is stable, $r>2.56$ chaos).
 Measure the correlation between the produced time series as measure of synchrony.
 ```{r echo=TRUE}
 Initial.N <- matrix(c(0.9,0.8),2,1)
